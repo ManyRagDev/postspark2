@@ -6,7 +6,8 @@
       "Bash(npx tsc:*)",
       "Bash(dir /s /b \"c:\\\\Users\\\\emanu\\\\Documents\\\\Projetos\\\\PostSpark 2\")",
       "Bash(dir:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

@@ -39,6 +39,7 @@
   ],
   "exclude": [
     "node_modules",
-    "_backup_vite"
+    "_backup_vite",
+    "landing-page"
   ]
 }
