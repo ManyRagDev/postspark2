@@ -27,7 +27,7 @@ export const STRIPE_PRICES: StripePriceConfig[] = [
     priceId: 'price_1SxddDE9QJm1ioJLcbzwIwoO',
     plan: 'LITE',
     interval: 'year',
-    amount: 19000, // R$190,00 (desconto anual)
+    amount: 18000, // R$180,00 (anual = R$15/mês)
   },
   // PRO Plan
   {
@@ -40,7 +40,7 @@ export const STRIPE_PRICES: StripePriceConfig[] = [
     priceId: 'price_1SxdeRE9QJm1ioJLgPJ5Pcz6',
     plan: 'PRO',
     interval: 'year',
-    amount: 79000, // R$790,00 (desconto anual)
+    amount: 75600, // R$756,00 (anual = R$63/mês)
   },
   // AGENCY - Coming soon (personalizado)
 ];
