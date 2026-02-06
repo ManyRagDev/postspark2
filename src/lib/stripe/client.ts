@@ -5,14 +5,31 @@
 
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
+// Allow build without STRIPE_SECRET_KEY, but warn
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+
+if (!STRIPE_SECRET_KEY && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️ STRIPE_SECRET_KEY is not set. Stripe features will be unavailable.');
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2026-01-28.clover',
-  typescript: true,
-});
+// Create Stripe instance only if key is available
+const stripeInstance = STRIPE_SECRET_KEY
+  ? new Stripe(STRIPE_SECRET_KEY, {
+      apiVersion: '2026-01-28.clover',
+      typescript: true,
+    })
+  : null;
+
+// Export for direct use (webhooks, etc.) - will be null if not configured
+export const stripe = stripeInstance;
+
+// Helper to ensure Stripe is configured before use
+function ensureStripe(): Stripe {
+  if (!stripeInstance) {
+    throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.');
+  }
+  return stripeInstance;
+}
 
 /**
  * Create a checkout session for subscription
@@ -30,7 +47,8 @@ export async function createCheckoutSession({
   successUrl: string;
   cancelUrl: string;
 }): Promise<Stripe.Checkout.Session> {
-  return stripe.checkout.sessions.create({
+  const stripeClient = ensureStripe();
+  return stripeClient.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
     line_items: [
@@ -62,7 +80,8 @@ export async function createPortalSession({
   customerId: string;
   returnUrl: string;
 }): Promise<Stripe.BillingPortal.Session> {
-  return stripe.billingPortal.sessions.create({
+  const stripeClient = ensureStripe();
+  return stripeClient.billingPortal.sessions.create({
     customer: customerId,
     return_url: returnUrl,
   });
@@ -72,7 +91,8 @@ export async function createPortalSession({
  * Get customer by email
  */
 export async function getCustomerByEmail(email: string): Promise<Stripe.Customer | null> {
-  const customers = await stripe.customers.list({
+  const stripeClient = ensureStripe();
+  const customers = await stripeClient.customers.list({
     email,
     limit: 1,
   });
@@ -83,7 +103,8 @@ export async function getCustomerByEmail(email: string): Promise<Stripe.Customer
  * Get subscription by customer ID
  */
 export async function getSubscriptionByCustomerId(customerId: string): Promise<Stripe.Subscription | null> {
-  const subscriptions = await stripe.subscriptions.list({
+  const stripeClient = ensureStripe();
+  const subscriptions = await stripeClient.subscriptions.list({
     customer: customerId,
     status: 'active',
     limit: 1,
@@ -95,7 +116,8 @@ export async function getSubscriptionByCustomerId(customerId: string): Promise<S
  * Cancel subscription
  */
 export async function cancelSubscription(subscriptionId: string): Promise<Stripe.Subscription> {
-  return stripe.subscriptions.cancel(subscriptionId);
+  const stripeClient = ensureStripe();
+  return stripeClient.subscriptions.cancel(subscriptionId);
 }
 
 /**
@@ -106,5 +128,6 @@ export function constructWebhookEvent(
   signature: string,
   webhookSecret: string
 ): Stripe.Event {
-  return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+  const stripeClient = ensureStripe();
+  return stripeClient.webhooks.constructEvent(payload, signature, webhookSecret);
 }

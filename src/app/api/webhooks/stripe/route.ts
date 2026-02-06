@@ -96,7 +96,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Get the subscription to find the price/plan
-  const stripe = (await import('@/lib/stripe/client')).stripe;
+  const { stripe } = await import('@/lib/stripe/client');
+  if (!stripe) {
+    console.error('[Webhook] Stripe not configured');
+    return;
+  }
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const priceId = subscription.items.data[0]?.price.id;
 
