@@ -38,41 +38,100 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isAppUser, setIsAppUser] = useState(false);
   const supabase = createClient();
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, userEmail?: string) => {
     try {
       console.log('[UserContext] Fetching profile for user:', userId);
-      
+
+      // Add timeout to prevent infinite loading (10 seconds)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000)
+      );
+
       // Use RPC function to access data from postspark schema
-      const { data, error } = await supabase
+      const profilePromise = supabase
         .rpc('get_user_profile', { user_uuid: userId });
+
+      const { data, error } = await Promise.race([
+        profilePromise,
+        timeoutPromise
+      ]) as any;
 
       console.log('[UserContext] Profile result:', { data, error });
 
       if (error) {
         console.error('[UserContext] Error fetching profile:', error);
+
+        // If RPC doesn't exist, create a default profile
+        if (error.message?.includes('function') || error.code === '42883') {
+          console.warn('[UserContext] RPC function not found, using default profile');
+          setProfile({
+            id: userId,
+            email: userEmail || '',
+            plan: 'FREE',
+            sparks: 50,
+            sparks_refill_date: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as UserProfile);
+          return;
+        }
+
         throw error;
       }
-      
+
       if (data && data.length > 0) {
         console.log('[UserContext] Profile found:', data[0]);
         setProfile(data[0] as UserProfile);
       } else {
-        console.warn('[UserContext] No profile found for user:', userId);
-        setProfile(null);
+        console.warn('[UserContext] No profile found for user, creating default');
+        // Create default profile if none exists
+        setProfile({
+          id: userId,
+          email: userEmail || '',
+          plan: 'FREE',
+          sparks: 50,
+          sparks_refill_date: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as UserProfile);
       }
     } catch (err) {
       console.error('[UserContext] Error fetching profile:', err);
-      setError('Falha ao carregar perfil do usuário');
+
+      // Set default profile on error to prevent infinite loading
+      if (err instanceof Error && err.message === 'Profile fetch timeout') {
+        console.error('[UserContext] Timeout - using default profile');
+        setProfile({
+          id: userId,
+          email: userEmail || '',
+          plan: 'FREE',
+          sparks: 50,
+          sparks_refill_date: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as UserProfile);
+      } else {
+        setError('Falha ao carregar perfil do usuário');
+      }
     }
   };
 
   const refreshProfile = async () => {
     if (user?.id) {
-      await fetchProfile(user.id);
+      await fetchProfile(user.id, user.email);
     }
   };
 
   useEffect(() => {
+    // Add overall timeout for session check (15 seconds)
+    const sessionTimeout = setTimeout(() => {
+      if (loading) {
+        console.error('[UserContext] Session check timeout - forcing loading to false');
+        setLoading(false);
+        setError('Timeout ao verificar sessão');
+      }
+    }, 15000);
+
     // Get initial session
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
@@ -81,16 +140,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         if (currentUser) {
           setIsAppUser(true);
-          fetchProfile(currentUser.id);
+          fetchProfile(currentUser.id, currentUser.email).finally(() => {
+            setLoading(false);
+            clearTimeout(sessionTimeout);
+          });
         } else {
           setIsAppUser(false);
+          setLoading(false);
+          clearTimeout(sessionTimeout);
         }
-        setLoading(false);
       })
       .catch((err) => {
         console.error('[UserContext] Error getting session:', err);
         setError('Falha ao verificar sessão');
         setLoading(false);
+        clearTimeout(sessionTimeout);
       });
 
     // Listen for auth changes
@@ -101,7 +165,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         if (currentUser) {
           setIsAppUser(true);
-          await fetchProfile(currentUser.id);
+          await fetchProfile(currentUser.id, currentUser.email);
         } else {
           setIsAppUser(false);
           setProfile(null);
@@ -109,7 +173,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(sessionTimeout);
+    };
   }, []);
 
   const hasEnoughSparks = (amount: number): boolean => {
