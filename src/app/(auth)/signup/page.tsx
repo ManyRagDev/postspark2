@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
-import { Sparkles, Crown, Zap } from 'lucide-react';
+import { Sparkles, Crown, Zap, Loader2 } from 'lucide-react';
 
 const APP_ID = 'postspark';
 
@@ -15,7 +15,7 @@ const PLAN_INFO: Record<string, { name: string; icon: typeof Sparkles; color: st
   AGENCY: { name: 'AGENCY', icon: Sparkles, color: 'text-orange-400' },
 };
 
-export default function SignupPage() {
+function SignupContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -218,5 +218,18 @@ export default function SignupPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-400 mx-auto mb-4" />
+        <p className="text-gray-400">Carregando...</p>
+      </div>
+    }>
+      <SignupContent />
+    </Suspense>
   );
 }
