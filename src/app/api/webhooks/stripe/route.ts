@@ -185,7 +185,7 @@ async function handleSubscriptionCanceled(subscription: Stripe.Subscription) {
  */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   // Only process subscription invoices (not one-time)
-  if (!invoice.subscription) {
+  if (!(invoice as any).subscription) {
     return;
   }
 

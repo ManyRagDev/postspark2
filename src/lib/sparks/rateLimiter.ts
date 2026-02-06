@@ -36,9 +36,9 @@ export async function checkRateLimit(
 ): Promise<RateLimitResult> {
   const supabase = await createClient();
   const config = RATE_LIMITS[action] || { maxRequests: 30, windowMs: 60 * 1000 };
-  
+
   const windowStart = new Date(Date.now() - config.windowMs);
-  
+
   // Query current count
   const query = supabase
     .schema('postspark')
@@ -46,16 +46,16 @@ export async function checkRateLimit(
     .select('*')
     .eq('action', action)
     .gte('window_start', windowStart.toISOString());
-    
+
   const { data: records } = isUserId
     ? await query.eq('user_id', identifier)
     : await query.eq('ip_address', identifier);
-  
+
   const count = records?.length || 0;
   const allowed = count < config.maxRequests;
   const remaining = Math.max(0, config.maxRequests - count);
   const resetTime = new Date(Date.now() + config.windowMs);
-  
+
   // Increment count if allowed
   if (allowed) {
     const insertData: Record<string, unknown> = {
@@ -63,16 +63,16 @@ export async function checkRateLimit(
       count: 1,
       window_start: new Date().toISOString(),
     };
-    
+
     if (isUserId) {
       insertData.user_id = identifier;
     } else {
       insertData.ip_address = identifier;
     }
-    
+
     await supabase.schema('postspark').from('rate_limits').insert(insertData);
   }
-  
+
   return {
     allowed,
     remaining,
@@ -91,7 +91,7 @@ export async function rateLimitMiddleware(
   ipAddress?: string
 ): Promise<{ error: string; status: number; headers: Record<string, string> } | null> {
   const identifier = userId || ipAddress;
-  
+
   if (!identifier) {
     return {
       error: 'Unable to determine rate limit identifier',
@@ -99,9 +99,9 @@ export async function rateLimitMiddleware(
       headers: {},
     };
   }
-  
+
   const result = await checkRateLimit(action, identifier, !!userId);
-  
+
   if (!result.allowed) {
     return {
       error: `Rate limit exceeded. Try again after ${result.resetTime.toISOString()}`,
@@ -114,7 +114,7 @@ export async function rateLimitMiddleware(
       },
     };
   }
-  
+
   return null;
 }
 
@@ -124,22 +124,22 @@ export async function rateLimitMiddleware(
 export function getClientIP(request: Request): string | null {
   // Try to get IP from various headers
   const headers = request.headers;
-  
+
   const forwarded = headers.get('x-forwarded-for');
   if (forwarded) {
     return forwarded.split(',')[0].trim();
   }
-  
+
   const realIP = headers.get('x-real-ip');
   if (realIP) {
     return realIP;
   }
-  
+
   const cfConnectingIP = headers.get('cf-connecting-ip');
   if (cfConnectingIP) {
     return cfConnectingIP;
   }
-  
+
   return null;
 }
 
@@ -149,15 +149,14 @@ export function getClientIP(request: Request): string | null {
  */
 export async function cleanupRateLimits(): Promise<number> {
   const supabase = await createClient();
-  
+
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
-  
+
   const { count } = await supabase
     .schema('postspark')
     .from('rate_limits')
-    .delete()
-    .lt('window_start', cutoff.toISOString())
-    .select('*', { count: 'exact', head: true });
-  
+    .delete({ count: 'exact' })
+    .lt('window_start', cutoff.toISOString());
+
   return count || 0;
 }
