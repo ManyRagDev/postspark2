@@ -48,26 +48,66 @@ export async function createCheckoutSession({
   cancelUrl: string;
 }): Promise<Stripe.Checkout.Session> {
   const stripeClient = ensureStripe();
-  return stripeClient.checkout.sessions.create({
-    mode: 'subscription',
-    payment_method_types: ['card'],
-    line_items: [
-      {
-        price: priceId,
-        quantity: 1,
-      },
-    ],
-    customer_email: userEmail,
-    client_reference_id: userId,
-    metadata: {
-      userId,
-    },
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    allow_promotion_codes: true,
-    billing_address_collection: 'required',
-    locale: 'pt-BR',
+
+  // Validate inputs
+  if (!priceId || typeof priceId !== 'string') {
+    throw new Error(`Invalid priceId: ${priceId}`);
+  }
+  if (!userId || typeof userId !== 'string') {
+    throw new Error(`Invalid userId: ${userId}`);
+  }
+  if (!userEmail || typeof userEmail !== 'string' || !userEmail.includes('@')) {
+    throw new Error(`Invalid userEmail: ${userEmail}`);
+  }
+  if (!successUrl || !successUrl.startsWith('http')) {
+    throw new Error(`Invalid successUrl: ${successUrl}`);
+  }
+  if (!cancelUrl || !cancelUrl.startsWith('http')) {
+    throw new Error(`Invalid cancelUrl: ${cancelUrl}`);
+  }
+
+  console.log('[Stripe Client] Creating checkout session with validated params:', {
+    priceId,
+    userId,
+    userEmail,
+    successUrl,
+    cancelUrl,
   });
+
+  try {
+    const session = await stripeClient.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      customer_email: userEmail,
+      client_reference_id: userId,
+      metadata: {
+        userId,
+      },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      allow_promotion_codes: true,
+      billing_address_collection: 'required',
+      locale: 'pt-BR',
+    });
+
+    console.log('[Stripe Client] Session created successfully:', session.id);
+    return session;
+  } catch (error: any) {
+    console.error('[Stripe Client] Error creating session:', {
+      message: error?.message,
+      type: error?.type,
+      code: error?.code,
+      statusCode: error?.statusCode,
+      raw: error?.raw,
+    });
+    throw error;
+  }
 }
 
 /**
