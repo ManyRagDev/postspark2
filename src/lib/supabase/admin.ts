@@ -4,37 +4,47 @@
  * Use this for webhooks and background jobs
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+function createAdminClient() {
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Allow build without keys, but warn
-if (!SUPABASE_URL && process.env.NODE_ENV === 'production') {
-  console.warn('⚠️ NEXT_PUBLIC_SUPABASE_URL is not set. Supabase admin features will be unavailable.');
+  // Allow build without keys, but warn
+  if (!SUPABASE_URL && process.env.NODE_ENV === 'production') {
+    console.warn('⚠️ NEXT_PUBLIC_SUPABASE_URL is not set. Supabase admin features will be unavailable.');
+  }
+
+  if (!SUPABASE_SERVICE_ROLE_KEY && process.env.NODE_ENV === 'production') {
+    console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY is not set. Supabase admin features will be unavailable.');
+  }
+
+  // Return null if keys missing (for build-time safety)
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return null;
+  }
+
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    db: {
+      schema: 'postspark',
+    },
+  });
 }
 
-if (!SUPABASE_SERVICE_ROLE_KEY && process.env.NODE_ENV === 'production') {
-  console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY is not set. Supabase admin features will be unavailable.');
-}
-
-// Create admin client only if both keys are available
-const supabaseAdminInstance = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-      db: {
-        schema: 'postspark',
-      },
-    })
-  : null;
+// Create singleton instance
+const supabaseAdminInstance = createAdminClient();
 
 export const supabaseAdmin = supabaseAdminInstance;
 
+// Export type with correct schema inference
+export type SupabaseAdminClient = ReturnType<typeof createAdminClient>;
+
 // Helper to ensure Supabase admin is configured before use
-function ensureAdmin(): SupabaseClient {
+function ensureAdmin(): NonNullable<SupabaseAdminClient> {
   if (!supabaseAdminInstance) {
     throw new Error('Supabase admin is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.');
   }
