@@ -4,29 +4,42 @@
  * Use this for webhooks and background jobs
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set');
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Allow build without keys, but warn
+if (!SUPABASE_URL && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️ NEXT_PUBLIC_SUPABASE_URL is not set. Supabase admin features will be unavailable.');
 }
 
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set');
+if (!SUPABASE_SERVICE_ROLE_KEY && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY is not set. Supabase admin features will be unavailable.');
 }
 
-export const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-    db: {
-      schema: 'postspark',
-    },
+// Create admin client only if both keys are available
+const supabaseAdminInstance = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+      db: {
+        schema: 'postspark',
+      },
+    })
+  : null;
+
+export const supabaseAdmin = supabaseAdminInstance;
+
+// Helper to ensure Supabase admin is configured before use
+function ensureAdmin(): SupabaseClient {
+  if (!supabaseAdminInstance) {
+    throw new Error('Supabase admin is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.');
   }
-);
+  return supabaseAdminInstance;
+}
 
 /**
  * Update user plan in database
@@ -37,7 +50,8 @@ export async function updateUserPlan(
   stripeCustomerId?: string,
   stripeSubscriptionId?: string
 ): Promise<void> {
-  const { error } = await supabaseAdmin
+  const admin = ensureAdmin();
+  const { error } = await admin
     .from('profiles')
     .update({
       plan,
@@ -61,7 +75,8 @@ export async function creditSparksToUser(
   amount: number,
   description: string
 ): Promise<void> {
-  const { error } = await supabaseAdmin.rpc('credit_sparks', {
+  const admin = ensureAdmin();
+  const { error } = await admin.rpc('credit_sparks', {
     p_user_id: userId,
     p_amount: amount,
     p_description: description,
@@ -77,7 +92,8 @@ export async function creditSparksToUser(
  * Get user by Stripe customer ID
  */
 export async function getUserByStripeCustomerId(customerId: string): Promise<{ id: string; email: string; plan: string } | null> {
-  const { data, error } = await supabaseAdmin
+  const admin = ensureAdmin();
+  const { data, error } = await admin
     .from('profiles')
     .select('id, email, plan')
     .eq('stripe_customer_id', customerId)
@@ -94,7 +110,8 @@ export async function getUserByStripeCustomerId(customerId: string): Promise<{ i
  * Get user by ID
  */
 export async function getUserById(userId: string): Promise<{ id: string; email: string; plan: string; stripe_customer_id?: string } | null> {
-  const { data, error } = await supabaseAdmin
+  const admin = ensureAdmin();
+  const { data, error } = await admin
     .from('profiles')
     .select('id, email, plan, stripe_customer_id')
     .eq('id', userId)
@@ -111,7 +128,8 @@ export async function getUserById(userId: string): Promise<{ id: string; email: 
  * Set user's next refill date
  */
 export async function setUserRefillDate(userId: string, date: Date): Promise<void> {
-  const { error } = await supabaseAdmin
+  const admin = ensureAdmin();
+  const { error } = await admin
     .from('profiles')
     .update({
       sparks_refill_date: date.toISOString(),
