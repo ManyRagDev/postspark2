@@ -69,9 +69,9 @@ export function Header({ isVisible }: HeaderProps) {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          {/* Logo with Static Image */}
+          {/* Logo with Static Image - Aumentado 50% (w-10 h-10 → w-16 h-16) */}
           <a href="#" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 relative transition-transform duration-300 group-hover:scale-110">
+            <div className="w-16 h-16 relative transition-transform duration-300 group-hover:scale-110">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo.png"

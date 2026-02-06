@@ -1,13 +1,26 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Play, Sparkles, Zap, TrendingUp, Clock } from 'lucide-react';
+import { ArrowRight, Play, Sparkles, Zap } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
+
+// Generate particle positions only once on client to avoid hydration mismatch
+function generateParticles(count: number) {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i,
+    top: 20 + Math.random() * 60,
+    left: 10 + Math.random() * 80,
+    color: i % 2 === 0 ? 'rgba(0, 212, 255, 0.6)' : 'rgba(255, 107, 53, 0.6)',
+    shadowColor: i % 2 === 0 ? 'rgba(0, 212, 255, 0.8)' : 'rgba(255, 107, 53, 0.8)',
+    duration: 4 + Math.random() * 4,
+    delay: i * 0.5,
+  }));
+}
 
 export function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -15,8 +28,13 @@ export function HeroSection() {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
-  const statsRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
+  const [particles, setParticles] = useState<ReturnType<typeof generateParticles>>([]);
+
+  // Generate particles only on client to avoid hydration mismatch
+  useEffect(() => {
+    setParticles(generateParticles(8));
+  }, []);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -44,13 +62,6 @@ export function HeroSection() {
       );
 
       loadTl.fromTo(
-        statsRef.current?.children || [],
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: 'power3.out' },
-        '-=0.4'
-      );
-
-      loadTl.fromTo(
         imageRef.current,
         { scale: 0.9, opacity: 0 },
         { scale: 1, opacity: 1, duration: 1, ease: 'power3.out' },
@@ -71,12 +82,6 @@ export function HeroSection() {
 
     return () => ctx.revert();
   }, []);
-
-  const stats = [
-    { icon: Zap, value: '10x', label: 'Mais Engajamento' },
-    { icon: Clock, value: '80%', label: 'Economia de Tempo' },
-    { icon: TrendingUp, value: '50K+', label: 'Usuários Ativos' },
-  ];
 
   return (
     <section
@@ -126,18 +131,21 @@ export function HeroSection() {
           }}
         />
 
-        {/* Floating particles */}
-        {[...Array(8)].map((_, i) => (
+        {/* Floating particles - rendered only on client */}
+        {particles.map((particle) => (
           <div
-            key={i}
+            key={particle.id}
             className="absolute w-1 h-1 rounded-full"
             style={{
-              top: `${20 + Math.random() * 60}%`,
-              left: `${10 + Math.random() * 80}%`,
-              background: i % 2 === 0 ? 'rgba(0, 212, 255, 0.6)' : 'rgba(255, 107, 53, 0.6)',
-              boxShadow: `0 0 10px ${i % 2 === 0 ? 'rgba(0, 212, 255, 0.8)' : 'rgba(255, 107, 53, 0.8)'}`,
-              animation: `float ${4 + Math.random() * 4}s ease-in-out infinite`,
-              animationDelay: `${i * 0.5}s`,
+              top: `${particle.top}%`,
+              left: `${particle.left}%`,
+              background: particle.color,
+              boxShadow: `0 0 10px ${particle.shadowColor}`,
+              animationName: 'float',
+              animationDuration: `${particle.duration}s`,
+              animationTimingFunction: 'ease-in-out',
+              animationIterationCount: 'infinite',
+              animationDelay: `${particle.delay}s`,
             }}
           />
         ))}
@@ -184,7 +192,7 @@ export function HeroSection() {
               className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto lg:mx-0 mb-8"
             >
               Transforme suas ideias em posts engajadores com IA.
-              Do conceito à publicação em minutos, não em horas.
+              Do conceito ao download em segundos, não em horas.
             </p>
 
             {/* Buttons */}
@@ -215,26 +223,6 @@ export function HeroSection() {
               </Button>
             </div>
 
-            {/* Stats */}
-            <div ref={statsRef} className="flex flex-wrap justify-center lg:justify-start gap-8">
-              {stats.map((stat, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(0, 168, 204, 0.2) 0%, rgba(0, 119, 182, 0.2) 100%)',
-                      border: '1px solid rgba(0, 180, 255, 0.2)',
-                    }}
-                  >
-                    <stat.icon className="w-6 h-6" style={{ color: '#00d4ff' }} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-white">{stat.value}</div>
-                    <div className="text-sm text-gray-500">{stat.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Hero Image */}
@@ -341,7 +329,7 @@ export function HeroSection() {
                       borderColor: 'rgba(0, 180, 255, 0.15)',
                     }}
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    {/*<div className="flex items-center justify-between mb-3">
                       <span className="text-sm text-gray-300">Performance</span>
                       <TrendingUp className="w-4 h-4" style={{ color: '#10b981' }} />
                     </div>
@@ -356,7 +344,7 @@ export function HeroSection() {
                           }}
                         />
                       ))}
-                    </div>
+                    </div>*/}
                   </div>
                 </div>
               </div>

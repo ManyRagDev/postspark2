@@ -60,7 +60,7 @@ const plans = [
       'Suporte dedicado 24/7',
       'Onboarding personalizado',
     ],
-    cta: 'Falar com Vendas',
+    cta: 'Disponível em breve',
     popular: false,
     gradient: 'from-orange-500/20 to-yellow-500/20',
   },

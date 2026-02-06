@@ -6,13 +6,11 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
   Sparkles,
   Zap,
-  Palette,
-  Calendar,
-  BarChart3,
-  MessageSquare,
-  Share2,
-  Wand2,
-  Target,
+  Brain,
+  LayoutGrid,
+  FolderOpen,
+  Image as ImageIcon,
+  Sliders,
 } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -21,66 +19,50 @@ const features = [
   {
     icon: Sparkles,
     title: 'Geração com IA',
-    description: 'Crie posts envolventes em segundos com nossa IA treinada nas melhores práticas de cada plataforma.',
+    description: 'Crie posts envolventes em segundos com Gemini 2.0 Flash. Detecta automaticamente o tom do seu conteúdo.',
     size: 'large',
     gradient: 'from-cyan-500/20 to-blue-500/20',
     iconColor: 'text-cyan-400',
   },
   {
-    icon: Palette,
-    title: 'Design Inteligente',
-    description: 'Templates adaptativos que se ajustam automaticamente à sua marca.',
+    icon: Brain,
+    title: 'Estados Ambientais',
+    description: 'IA detecta automaticamente: Motivacional, Promocional, Educacional, Pessoal e mais. Adapta o design ao seu conteúdo.',
     size: 'medium',
     gradient: 'from-purple-500/20 to-pink-500/20',
     iconColor: 'text-purple-400',
   },
   {
-    icon: Calendar,
-    title: 'Agendamento',
-    description: 'Programe posts para o momento ideal de engajamento.',
-    size: 'medium',
-    gradient: 'from-orange-500/20 to-yellow-500/20',
-    iconColor: 'text-orange-400',
-  },
-  {
-    icon: BarChart3,
-    title: 'Analytics Avançado',
-    description: 'Métricas detalhadas e insights acionáveis para otimizar sua estratégia de conteúdo em todas as plataformas.',
+    icon: LayoutGrid,
+    title: 'Layouts Inteligentes',
+    description: '6 layouts profissionais: Centered, Hierarchy, Split, Card, Headline e Carousel. Cada um otimizado para seu tipo de conteúdo.',
     size: 'large',
     gradient: 'from-green-500/20 to-emerald-500/20',
     iconColor: 'text-green-400',
   },
   {
-    icon: Share2,
-    title: 'Multi-plataforma',
-    description: 'Publique simultaneamente no Instagram, LinkedIn, Twitter e mais.',
-    size: 'small',
+    icon: FolderOpen,
+    title: 'Galeria Premium',
+    description: 'Biblioteca de backgrounds organizados por categorias: Acolhimento, Caos Criativo, Impacto, Luxo e Técnico.',
+    size: 'medium',
+    gradient: 'from-orange-500/20 to-yellow-500/20',
+    iconColor: 'text-orange-400',
+  },
+  {
+    icon: ImageIcon,
+    title: 'Geração de Imagens',
+    description: 'Crie backgrounds únicos com IA. Modo Simple (Pollinations) para gradientes abstratos ou Modo Complex (Gemini) para imagens realistas.',
+    size: 'medium',
     gradient: 'from-pink-500/20 to-rose-500/20',
     iconColor: 'text-pink-400',
   },
   {
-    icon: MessageSquare,
-    title: 'Respostas Automáticas',
-    description: 'IA que responde comentários mantendo sua voz de marca.',
-    size: 'small',
+    icon: Sliders,
+    title: 'Edição Total',
+    description: 'Controle manual sobre texto, imagem (brilho, contraste, saturação, blur, zoom) e layout. Override por slide para carrosséis.',
+    size: 'medium',
     gradient: 'from-indigo-500/20 to-violet-500/20',
     iconColor: 'text-indigo-400',
-  },
-  {
-    icon: Target,
-    title: 'Segmentação',
-    description: 'Alcance o público certo na hora certa.',
-    size: 'small',
-    gradient: 'from-red-500/20 to-orange-500/20',
-    iconColor: 'text-red-400',
-  },
-  {
-    icon: Wand2,
-    title: 'Otimização Automática',
-    description: 'Ajustes automáticos baseados no desempenho.',
-    size: 'small',
-    gradient: 'from-teal-500/20 to-cyan-500/20',
-    iconColor: 'text-teal-400',
   },
 ];
 
@@ -158,8 +140,8 @@ export function FeaturesSection() {
             <span className="gradient-text">brilhar</span>
           </h2>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Uma suite completa de ferramentas impulsionadas por IA para criar,
-            agendar e analisar seu conteúdo de redes sociais.
+            Uma suite completa de ferramentas impulsionadas por IA para criar
+            posts incríveis para suas redes sociais.
           </p>
         </div>
 

@@ -1,6 +1,7 @@
 # Tracks - PostSpark 2.0
 
 ## Tracks Ativas
+- [ ] [TRACK-009: Credit System (Sparks)](./tracks/009-credit-system/plan.md) - Sistema de monetização com Sparks
 - [ ] [TRACK-005: Carousel Fix](./tracks/005-carousel-fix/plan.md) - Correcao completa do carrossel
 - [ ] [TRACK-004: Ambient Intelligence Refinement](./tracks/004-ambient-refinement/plan.md) - Melhorar deteccao de estados
 - [ ] [TRACK-007: Edição Visual Avançada](./tracks/007-edicao-avancada/plan.md) - Drag-and-Drop e Configuração por Slide

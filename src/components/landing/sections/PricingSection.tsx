@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Link from 'next/link';
-import { Check, Sparkles, Zap, Crown } from 'lucide-react';
+import { Check, Sparkles, Zap, Crown, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 
@@ -12,58 +12,96 @@ gsap.registerPlugin(ScrollTrigger);
 
 const plans = [
   {
-    name: 'Starter',
+    name: 'FREE',
     icon: Sparkles,
-    description: 'Perfeito para começar',
+    description: 'Comece a criar gratuitamente',
     monthlyPrice: 0,
     yearlyPrice: 0,
+    sparks: '50 sparks',
+    sparksPeriod: 'única vez',
     features: [
-      '3 contas de rede social',
-      '10 posts por mês com IA',
-      'Templates básicos',
-      'Agendamento simples',
-      'Analytics básico',
+      '50 Sparks para testar',
+      'Motor: Smart Match',
+      'Formato: Post 1:1',
+      'Marca d\'água obstrutiva',
+      'Download preview (baixa res)',
+    ],
+    notIncluded: [
+      'Sem regenerações grátis',
+      'Sem carrossel',
+      'Sem geração de imagens IA',
     ],
     cta: 'Começar Grátis',
+    ctaLink: '/signup',
     popular: false,
     gradient: 'from-gray-500/20 to-gray-600/20',
   },
   {
-    name: 'Pro',
+    name: 'LITE',
     icon: Zap,
-    description: 'Para criadores sérios',
-    monthlyPrice: 49,
-    yearlyPrice: 39,
+    description: 'Para criadores individuais',
+    monthlyPrice: 19,
+    yearlyPrice: 15,
+    sparks: '300 sparks',
+    sparksPeriod: 'por mês',
     features: [
-      '10 contas de rede social',
-      'Posts ilimitados com IA',
-      'Templates premium',
-      'Agendamento avançado',
-      'Analytics completo',
-      'Respostas automáticas',
-      'Suporte prioritário',
+      '300 Sparks/mês',
+      'Motores: Smart Match + Pollinations',
+      'Todos os formatos (1:1, 4:5, 9:16)',
+      'Preview limpo sem marca',
+      'Download HD (1080px)',
+      '1 Regeneração grátis (Pollinations)',
+    ],
+    notIncluded: [
+      'Sem Nano Banana Pro',
+      'Sem carrossel IA',
     ],
     cta: 'Começar Trial',
+    ctaLink: '/signup?plan=LITE',
     popular: true,
     gradient: 'from-cyan-500/20 to-blue-500/20',
   },
   {
-    name: 'Enterprise',
+    name: 'PRO',
     icon: Crown,
-    description: 'Para equipes e agências',
-    monthlyPrice: 149,
-    yearlyPrice: 119,
+    description: 'Para profissionais de conteúdo',
+    monthlyPrice: 79,
+    yearlyPrice: 63,
+    sparks: '1.500 sparks',
+    sparksPeriod: 'por mês',
     features: [
-      'Contas ilimitadas',
-      'Posts ilimitados com IA',
-      'Templates customizados',
-      'API access',
-      'Analytics avançado',
-      'Gerenciamento de equipe',
-      'Suporte dedicado 24/7',
+      '1.500 Sparks/mês',
+      'Todos os motores (incl. Nano Banana Pro)',
+      'Carrosséis IA ilimitados',
+      'SEO 2026 para legenda',
+      'Regenerações: 2-20 Sparks',
+      'Todos os formatos + Carrossel',
+    ],
+    notIncluded: [],
+    cta: 'Virar PRO',
+    ctaLink: '/signup?plan=PRO',
+    popular: false,
+    gradient: 'from-purple-500/20 to-pink-500/20',
+  },
+  {
+    name: 'AGENCY',
+    icon: Building2,
+    description: 'Para agências e equipes',
+    monthlyPrice: 249,
+    yearlyPrice: 199,
+    sparks: '5.000 sparks',
+    sparksPeriod: 'por mês',
+    features: [
+      '5.000 Sparks/mês',
+      'Tudo do PRO',
+      'Brand Kits ilimitados',
+      'Gestão de múltiplos clientes',
+      'Suporte prioritário',
       'Onboarding personalizado',
     ],
-    cta: 'Falar com Vendas',
+    notIncluded: [],
+    cta: 'Disponível em breve',
+    ctaLink: null, // No link for coming soon
     popular: false,
     gradient: 'from-orange-500/20 to-yellow-500/20',
   },
@@ -123,12 +161,15 @@ export function PricingSection() {
     <section
       id="pricing"
       ref={sectionRef}
-      className="relative py-24 lg:py-32 overflow-hidden"
+      className="relative py-16 lg:py-24 overflow-hidden bg-gradient-to-b from-[#0a1628] to-[#050a10]"
     >
       {/* Background */}
       <div className="absolute inset-0">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/5 rounded-full blur-[150px]" />
       </div>
+
+      {/* Top transition gradient */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#0a1628] to-transparent z-0" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -141,13 +182,16 @@ export function PricingSection() {
             Escolha o plano{' '}
             <span className="gradient-text">perfeito para você</span>
           </h2>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-8">
-            Comece gratuitamente e evolua conforme suas necessidades.
-            Todos os planos incluem atualizações gratuitas.
+          <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-4">
+            Pague apenas pelo que usar. Cada geração consome Sparks. 
+            Quanto mais você usa, mais economiza.
+          </p>
+          <p className="text-sm text-gray-500 max-w-xl mx-auto">
+            Sparks acumulam e nunca expiram. Upgrade ou downgrade a qualquer momento.
           </p>
 
           {/* Billing Toggle */}
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-4 mt-8">
             <span className={`text-sm ${!isYearly ? 'text-white' : 'text-gray-500'}`}>
               Mensal
             </span>
@@ -170,7 +214,7 @@ export function PricingSection() {
         {/* Pricing Cards */}
         <div
           ref={cardsRef}
-          className="grid md:grid-cols-3 gap-6 lg:gap-8"
+          className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-4"
         >
           {plans.map((plan, index) => (
             <div
@@ -179,7 +223,7 @@ export function PricingSection() {
                 plan.popular
                   ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/50 scale-105 z-10'
                   : 'bg-white/5 border border-white/10'
-              } p-6 lg:p-8`}
+              } p-6 lg:p-6`}
             >
               {/* Popular badge */}
               {plan.popular && (
@@ -197,56 +241,95 @@ export function PricingSection() {
                 <p className="text-sm text-gray-400">{plan.description}</p>
               </div>
 
+              {/* Sparks Info */}
+              <div className="mb-4 p-3 bg-white/5 rounded-lg border border-white/10">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-yellow-400" />
+                  <span className="text-lg font-bold text-white">{plan.sparks}</span>
+                </div>
+                <span className="text-xs text-gray-500 ml-7">{plan.sparksPeriod}</span>
+              </div>
+
               {/* Price */}
               <div className="mb-6">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl lg:text-5xl font-bold text-white">
+                  <span className="text-4xl font-bold text-white">
                     R${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
                   </span>
-                  <span className="text-gray-500">/mês</span>
+                  <span className="text-gray-400">/mês</span>
                 </div>
                 {isYearly && plan.monthlyPrice > 0 && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Cobrado anualmente (R${plan.yearlyPrice * 12}/ano)
+                    R${plan.yearlyPrice * 12} cobrado anualmente
                   </p>
                 )}
               </div>
 
               {/* Features */}
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-6">
                 {plan.features.map((feature, featureIndex) => (
                   <li key={featureIndex} className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-cyan-400" />
-                    </div>
+                    <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                     <span className="text-sm text-gray-300">{feature}</span>
+                  </li>
+                ))}
+                {plan.notIncluded.map((feature, featureIndex) => (
+                  <li key={`not-${featureIndex}`} className="flex items-start gap-3 opacity-50">
+                    <span className="w-5 h-5 flex-shrink-0 mt-0.5 text-gray-600">×</span>
+                    <span className="text-sm text-gray-500 line-through">{feature}</span>
                   </li>
                 ))}
               </ul>
 
               {/* CTA */}
-              <Button
-                className={`w-full ${
-                  plan.popular
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                } font-semibold py-6`}
-                asChild
-              >
-                <Link href="/dashboard">{plan.cta}</Link>
-              </Button>
+              {plan.ctaLink ? (
+                <Link href={plan.ctaLink} className="block">
+                  <Button
+                    className={`w-full ${
+                      plan.popular
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                    }`}
+                  >
+                    {plan.cta}
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  disabled
+                  className="w-full bg-gray-700/50 text-gray-500 cursor-not-allowed border border-gray-600"
+                >
+                  {plan.cta}
+                </Button>
+              )}
             </div>
           ))}
         </div>
 
-        {/* Trust badges */}
+        {/* Sparks Explanation */}
         <div className="mt-16 text-center">
-          <p className="text-sm text-gray-500 mb-4">Confiado por mais de 50.000 criadores</p>
-          <div className="flex flex-wrap justify-center gap-8 opacity-50">
-            {['Instagram', 'LinkedIn', 'Twitter', 'TikTok', 'YouTube'].map((platform) => (
-              <span key={platform} className="text-gray-400 font-medium">{platform}</span>
-            ))}
+          <h3 className="text-2xl font-bold text-white mb-4">Como funcionam os Sparks? ⚡</h3>
+          <div className="grid md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+              <div className="text-3xl font-bold text-cyan-400 mb-2">10</div>
+              <p className="text-sm text-gray-400">Sparks por Post Estático</p>
+            </div>
+            <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+              <div className="text-3xl font-bold text-purple-400 mb-2">25</div>
+              <p className="text-sm text-gray-400">Sparks por Imagem Express</p>
+            </div>
+            <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+              <div className="text-3xl font-bold text-pink-400 mb-2">80</div>
+              <p className="text-sm text-gray-400">Sparks por Nano Banana Pro</p>
+            </div>
+            <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+              <div className="text-3xl font-bold text-orange-400 mb-2">100</div>
+              <p className="text-sm text-gray-400">Sparks por Carrossel IA</p>
+            </div>
           </div>
+          <p className="text-sm text-gray-500 mt-6">
+            Regenerações a partir de 2 Sparks. Cada tipo de regeneração é gratuita 1x por post.
+          </p>
         </div>
       </div>
     </section>

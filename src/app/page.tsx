@@ -5,10 +5,10 @@ import { IntroAnimation } from '@/components/landing/IntroAnimation';
 import { Header } from '@/components/landing/Header';
 import { Footer } from '@/components/landing/Footer';
 import { HeroSection } from '@/components/landing/sections/HeroSection';
-import { FeaturesSection } from '@/components/landing/sections/FeaturesSection';
+import { FeaturesParallaxSection } from '@/components/landing/sections/FeaturesParallaxSection';
 import { StickySection } from '@/components/landing/sections/StickySection';
 import { PricingSection } from '@/components/landing/sections/PricingSection';
-import { TestimonialsSection } from '@/components/landing/sections/TestimonialsSection';
+import { AmbientStatesSection } from '@/components/landing/sections/AmbientStatesSection';
 import { CTASection } from '@/components/landing/sections/CTASection';
 
 export default function LandingPage() {
@@ -50,10 +50,10 @@ export default function LandingPage() {
       {/* Main Content */}
       <main>
         <HeroSection />
-        <FeaturesSection />
+        <FeaturesParallaxSection />
         <StickySection />
         <PricingSection />
-        <TestimonialsSection />
+        <AmbientStatesSection />
         <CTASection />
       </main>
 

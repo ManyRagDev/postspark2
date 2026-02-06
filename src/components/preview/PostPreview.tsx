@@ -8,13 +8,14 @@ import { LayoutSplit } from './layouts/LayoutSplit';
 import { LayoutCard } from './layouts/LayoutCard';
 import { LayoutHeadline } from './layouts/LayoutHeadline';
 import { LayoutCarousel } from './layouts/LayoutCarousel';
+import { WatermarkOverlay } from '@/components/Watermark';
+import { useUser } from '@/contexts/UserContext';
 
 export interface PostPreviewProps {
     text: string;
     bodyText?: string;
     config: AmbientConfig;
     imageUrl?: string;
-    // ...
     slides?: string[];
     editSettings?: EditSettings;
     currentSlide?: number;
@@ -22,6 +23,16 @@ export interface PostPreviewProps {
     onLayoutUpdate?: (updates: Partial<LayoutSettings>) => void;
     overlayOpacity?: number;
     overlayColor?: string;
+    /**
+     * Enable Fidelity Guard protection (low-res preview + watermark)
+     * Default: true for security
+     */
+    enableProtection?: boolean;
+    /**
+     * Max width for preview (for low-res rendering)
+     * Default: 400px for Fidelity Guard
+     */
+    maxPreviewWidth?: number;
 }
 
 export function PostPreview({
@@ -36,7 +47,12 @@ export function PostPreview({
     onLayoutUpdate,
     overlayOpacity: overlayOpacityProp,
     overlayColor: overlayColorProp,
+    enableProtection = true,
+    maxPreviewWidth = 400,
 }: PostPreviewProps) {
+    // Get user plan for watermark
+    const { profile } = useUser();
+    const userPlan = profile?.plan || 'FREE';
     // Compute image filters from editSettings
     const imageFilters = editSettings?.image ? {
         filter: `
@@ -158,6 +174,10 @@ export function PostPreview({
                 style={{
                     backgroundColor: config.theme.bg,
                     boxShadow: `0 25px 50px -12px ${config.theme.accent}30`,
+                    // Fidelity Guard: Limit max width for low-res preview
+                    maxWidth: enableProtection ? maxPreviewWidth : undefined,
+                    // Fidelity Guard: CSS pixelation for preview
+                    imageRendering: enableProtection ? 'pixelated' : 'auto',
                 }}
                 animate={{
                     backgroundColor: config.theme.bg,
@@ -240,7 +260,28 @@ export function PostPreview({
                         🔥 OFERTA
                     </div>
                 )}
+
+                {/* Fidelity Guard: Watermark Overlay */}
+                {enableProtection && (
+                    <WatermarkOverlay
+                        plan={userPlan}
+                        className="z-20"
+                    />
+                )}
             </motion.div>
+
+            {/* Fidelity Guard: Preview quality indicator */}
+            {enableProtection && (
+                <div className="flex items-center justify-center gap-2 mt-2 text-xs text-gray-500">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>Preview em baixa resolução</span>
+                    <span className="text-gray-600">•</span>
+                    <span>Download em alta qualidade disponível</span>
+                </div>
+            )}
         </div>
     );
 }

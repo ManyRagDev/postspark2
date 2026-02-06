@@ -12,23 +12,18 @@ gsap.registerPlugin(ScrollTrigger);
 const steps = [
   {
     number: '01',
-    title: 'Conecte suas contas',
-    description: 'Integre todas as suas redes sociais em um único dashboard. Suportamos Instagram, LinkedIn, Twitter, Facebook e mais.',
+    title: 'Digite sua ideia',
+    description: 'Escreva o conceito do seu post. Nossa IA detecta automaticamente o estado do conteúdo (motivacional, promocional, educacional, etc.).',
   },
   {
     number: '02',
-    title: 'Defina sua estratégia',
-    description: 'Nossa IA analisa seu público e concorrência para sugerir o melhor tipo de conteúdo e horários de publicação.',
+    title: 'Personalize o design',
+    description: 'Escolha entre 6 layouts, selecione um background da galeria ou gere com IA, ajuste cores, fontes e overlays.',
   },
   {
     number: '03',
-    title: 'Crie com inteligência',
-    description: 'Use nossos templates inteligentes ou deixe a IA gerar posts completos baseados em suas ideias e objetivos.',
-  },
-  {
-    number: '04',
-    title: 'Agende e acompanhe',
-    description: 'Programe suas publicações e monitore o desempenho em tempo real com analytics detalhados.',
+    title: 'Exporte e publique',
+    description: 'Baixe seu post pronto para Instagram, LinkedIn ou qualquer rede social. Formatos: 1:1, 5:6 ou 9:16.',
   },
 ];
 
@@ -40,18 +35,17 @@ export function StickySection() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Image blur/saturation animation on scroll
+      // Section entrance - fade in from below
       gsap.fromTo(
-        imageRef.current,
-        { filter: 'blur(10px) saturate(0.5)', scale: 1.1 },
+        sectionRef.current,
+        { opacity: 0 },
         {
-          filter: 'blur(0px) saturate(1.2)',
-          scale: 1,
-          ease: 'none',
+          opacity: 1,
+          ease: 'power2.out',
           scrollTrigger: {
             trigger: sectionRef.current,
-            start: 'top bottom',
-            end: 'center center',
+            start: 'top 90%',
+            end: 'top 60%',
             scrub: 1,
           },
         }
@@ -106,17 +100,14 @@ export function StickySection() {
     <section
       id="how-it-works"
       ref={sectionRef}
-      className="relative min-h-[200vh]"
+      className="relative min-h-[110vh] bg-gradient-to-b from-[#050a10] via-[#0a1628] to-[#0a1628]"
     >
       {/* Sticky Container */}
       <div className="sticky top-0 h-screen overflow-hidden">
-        {/* Background Image */}
+        {/* Background Image - starts clear for smooth transition */}
         <div
           ref={imageRef}
           className="absolute inset-0 w-full h-full"
-          style={{
-            filter: 'blur(10px) saturate(0.5)',
-          }}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/40 via-purple-900/40 to-orange-900/40" />
           <div
@@ -143,15 +134,15 @@ export function StickySection() {
                 </div>
 
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
-                  De ideia à publicação em{' '}
+                  De ideia ao download em{' '}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-orange-400">
-                    4 passos simples
+                    3 passos simples
                   </span>
                 </h2>
 
                 <p className="text-lg text-gray-300 mb-8">
-                  Nossa plataforma foi projetada para simplificar seu fluxo de trabalho
-                  e maximizar seus resultados nas redes sociais.
+                  Nossa plataforma foi projetada para simplificar sua criação de conteúdo
+                  e maximizar o impacto visual dos seus posts.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4">

@@ -1,11 +1,25 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from '@/lib/supabase/server';
+import { createGeneration, refundSparks } from '@/lib/sparks/service';
+import { checkRateLimit } from '@/lib/sparks/rateLimiter';
+import { getGenerationCost } from '@/lib/sparks/config';
+import type { GenerationType } from '@/lib/sparks/config';
 
 // ============ TYPES ============
 
 interface GenerateImageBody {
     prompt: string;
     isComplex: boolean;
+    idempotencyKey?: string;
+}
+
+export interface GenerateImageResponse {
+    image: string;
+    provider: 'pollinations' | 'gemini';
+    generationId?: string;
+    sparksUsed?: number;
+    sparksRemaining?: number;
 }
 
 type ImageProvider = 'pollinations' | 'gemini';
@@ -18,11 +32,6 @@ const geminiClient = new GoogleGenAI({
 
 // ============ PROMPT WRAPPERS ============
 
-/**
- * Wrapper para prompts do Pollinations (modo Simple)
- * Foco: gradientes, formas abstratas, fundos modernos
- * Regra Anti-Texto aplicada via prompt explícito
- */
 function wrapSimplePrompt(userPrompt: string): string {
     return `Abstract background image for social media post. Theme: ${userPrompt}.
     
@@ -33,11 +42,6 @@ function wrapSimplePrompt(userPrompt: string): string {
     Focus: pure visual elements, colors, textures, patterns, shapes, gradients - absolutely NO written content of any kind.`;
 }
 
-/**
- * Wrapper para prompts do Gemini (modo Complex)
- * Foco: realismo, detalhes, imagens personalizadas
- * Regra Anti-Texto aplicada via instrução explícita
- */
 function wrapComplexPrompt(userPrompt: string): string {
     return `Generate a visually striking, high-quality background image for a social media post.
 
@@ -59,10 +63,6 @@ STYLE REQUIREMENTS:
 
 // ============ PROVIDER IMPLEMENTATIONS ============
 
-/**
- * Gera imagem usando Pollinations Flux (modo Simple)
- * Fetches the actual image and returns as base64 data URI
- */
 async function generateWithPollinations(prompt: string): Promise<string> {
     const wrappedPrompt = wrapSimplePrompt(prompt);
     const encodedPrompt = encodeURIComponent(wrappedPrompt);
@@ -75,212 +75,218 @@ async function generateWithPollinations(prompt: string): Promise<string> {
         enhance: 'true',
     });
 
-    // Build URL using gen.pollinations.ai endpoint (API gateway)
     const url = `https://gen.pollinations.ai/image/${encodedPrompt}?${params.toString()}`;
 
-    // console.log(`[Pollinations] Generated URL: ${url.slice(0, 100)}...`);
-    // console.log(`[Pollinations] Fetching image from URL...`);
-
-    // Build headers with Authorization if API key is available
     const headers: Record<string, string> = {};
     if (process.env.POLLINATIONS_API_KEY) {
         headers['Authorization'] = `Bearer ${process.env.POLLINATIONS_API_KEY}`;
     }
 
-    // Fetch the actual image with timeout and retry
     const maxRetries = 3;
-    const timeout = 30000; // 30 seconds
+    const timeout = 30000;
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            // console.log(`[Pollinations] Fetch attempt ${attempt}/${maxRetries}`);
-            
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
             
-            const response = await fetch(url, {
-                signal: controller.signal,
+            const response = await fetch(url, { 
                 headers,
+                signal: controller.signal,
             });
-            
             clearTimeout(timeoutId);
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
             
-            const contentType = response.headers.get('content-type');
-            if (!contentType?.startsWith('image/')) {
-                throw new Error(`Unexpected content type: ${contentType}`);
-            }
-            
-            const imageBuffer = Buffer.from(await response.arrayBuffer());
-            const base64Image = imageBuffer.toString('base64');
-            const mimeType = contentType || 'image/png';
-            
-            // console.log(`[Pollinations] Image fetched successfully - Size: ${(imageBuffer.length / 1024).toFixed(1)}KB`);
-            
-            return `data:${mimeType};base64,${base64Image}`;
+            const imageBuffer = await response.arrayBuffer();
+            const base64Image = Buffer.from(imageBuffer).toString('base64');
+            return `data:image/jpeg;base64,${base64Image}`;
             
         } catch (error: any) {
-            // console.error(`[Pollinations] Attempt ${attempt} failed:`, error.message);
-
             if (attempt === maxRetries) {
-                throw new Error(`Failed to fetch image after ${maxRetries} attempts: ${error.message}`);
+                throw new Error(`Failed to fetch from Pollinations after ${maxRetries} attempts: ${error.message}`);
             }
-            
-            // Wait before retry (exponential backoff)
-            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-            // console.log(`[Pollinations] Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+            await new Promise(r => setTimeout(r, 1000 * attempt));
         }
     }
     
-    throw new Error('Unexpected error in image generation');
+    throw new Error('Unexpected end of retry loop');
 }
 
-/**
- * Gera imagem usando Gemini (modo Complex)
- * Retorna base64 data URI
- */
 async function generateWithGemini(prompt: string): Promise<string> {
     const wrappedPrompt = wrapComplexPrompt(prompt);
-    const model = "gemini-2.0-flash-exp-image-generation";
-
-    // console.log(`[Gemini] Using model: ${model}`);
-    // console.log(`[Gemini] Wrapped prompt length: ${wrappedPrompt.length} chars`);
-
+    
     const response = await geminiClient.models.generateContent({
-        model: model,
+        model: "gemini-2.0-flash-exp-image-generation",
         contents: wrappedPrompt,
         config: {
-            responseModalities: ['IMAGE', 'TEXT'],
-        }
-    } as any);
+            responseModalities: ['Text', 'Image']
+        },
+    });
 
-    // Log da estrutura da resposta para debug
-    // console.log('[Gemini] Response received, checking for image...');
-
-    const imagePart = response.candidates?.[0]?.content?.parts?.find(
-        (part: any) => part.inlineData
-    );
-
-    if (!imagePart?.inlineData?.data) {
-        // console.error('[Gemini] No image data in response');
-        throw new Error("Gemini did not return an image. Try a different prompt or use Simple mode.");
+    if (!response.candidates || response.candidates.length === 0) {
+        throw new Error('No candidates returned from Gemini');
     }
 
-    // console.log('[Gemini] Image extracted successfully');
-    return `data:image/png;base64,${imagePart.inlineData.data}`;
+    const candidate = response.candidates[0];
+    
+    if (!candidate.content || !candidate.content.parts) {
+        throw new Error('No content parts returned from Gemini');
+    }
+
+    for (const part of candidate.content.parts) {
+        if (part.inlineData) {
+            const imageData = part.inlineData.data;
+            if (imageData) {
+                return `data:image/png;base64,${imageData}`;
+            }
+        }
+    }
+
+    throw new Error('No image data found in Gemini response');
 }
 
 // ============ MAIN HANDLER ============
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
     const startTime = Date.now();
     let provider: ImageProvider = 'pollinations';
 
     try {
-        const body: GenerateImageBody = await req.json();
-        const { prompt, isComplex = false } = body;
-
-        // Validação do prompt
-        if (!prompt?.trim()) {
+        // Check rate limit
+        const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
+        const rateLimit = await checkRateLimit('generation:create', clientIP, false);
+        
+        if (!rateLimit.allowed) {
             return NextResponse.json(
-                { error: 'Prompt is required', code: 'INVALID_PROMPT' },
+                { 
+                    error: 'Rate limit exceeded',
+                    message: `Too many requests. Try again later.`,
+                    retryAfter: Math.ceil((rateLimit.resetTime.getTime() - Date.now()) / 1000),
+                },
+                { status: 429 }
+            );
+        }
+
+        // Authenticate user
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return NextResponse.json(
+                { error: 'Unauthorized', message: 'Please sign in to generate images' },
+                { status: 401 }
+            );
+        }
+
+        const body: GenerateImageBody = await request.json();
+        const { prompt, isComplex } = body;
+
+        if (!prompt || typeof prompt !== 'string') {
+            return NextResponse.json(
+                { error: 'Missing or invalid "prompt" field', code: 'VALIDATION_ERROR' },
                 { status: 400 }
             );
         }
 
-        // Validação de comprimento (proteção contra DoS/abuso)
-        const MAX_PROMPT_LENGTH = 500;
-        if (prompt.length > MAX_PROMPT_LENGTH) {
+        // Determine generation type and cost
+        const generationType: GenerationType = isComplex ? 'NANO_BANANA' : 'POLLINATIONS';
+        const sparkCost = getGenerationCost(generationType, false);
+
+        // Generate idempotency key
+        const idempotencyKey = body.idempotencyKey || `${user.id}-img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        // Create generation session and debit sparks
+        const generationResult = await createGeneration(
+            user.id,
+            prompt,
+            generationType,
+            idempotencyKey
+        );
+
+        if (!generationResult.success) {
             return NextResponse.json(
-                { error: `Prompt muito longo. Máximo: ${MAX_PROMPT_LENGTH} caracteres`, code: 'PROMPT_TOO_LONG' },
+                { 
+                    error: 'Generation failed',
+                    message: generationResult.error || 'Failed to process generation',
+                    code: 'GENERATION_FAILED',
+                },
                 { status: 400 }
             );
         }
 
-        // console.log(`\n========== IMAGE GENERATION REQUEST ==========`);
-        // console.log(`[ImageGen] Mode: ${isComplex ? 'COMPLEX (Gemini)' : 'SIMPLE (Pollinations)'}`);
-        // console.log(`[ImageGen] Prompt: "${prompt.slice(0, 80)}${prompt.length > 80 ? '...' : ''}"`);
+        const generationId = generationResult.generationId!;
 
-        if (isComplex) {
-            // ============ COMPLEX MODE: GEMINI ============
-            provider = 'gemini';
+        try {
+            let imageData: string;
 
-            if (!process.env.GOOGLE_API_KEY) {
-                // console.error('[Gemini] API key not configured');
-                return NextResponse.json(
-                    { error: 'GOOGLE_API_KEY not configured', code: 'CONFIG_ERROR' },
-                    { status: 500 }
-                );
-            }
+            if (isComplex) {
+                provider = 'gemini';
 
-            try {
-                const base64Image = await generateWithGemini(prompt);
-                const duration = Date.now() - startTime;
-
-                // console.log(`[ImageGen] SUCCESS - Gemini - ${duration}ms`);
-                // console.log(`==========================================\n`);
-
-                return NextResponse.json({
-                    image: base64Image,
-                    provider: 'gemini'
-                });
-
-            } catch (geminiError: any) {
-                // Tratamento específico para erro de quota
-                const isQuotaError =
-                    geminiError.message?.toLowerCase().includes('quota') ||
-                    geminiError.message?.toLowerCase().includes('rate limit') ||
-                    geminiError.message?.includes('429') ||
-                    geminiError.status === 429;
-
-                if (isQuotaError) {
-                    // console.error('[Gemini] QUOTA EXCEEDED');
-                    return NextResponse.json({
-                        error: 'Limite de uso do Gemini atingido. Tente o modo Simples ou aguarde alguns minutos.',
-                        code: 'QUOTA_EXCEEDED',
-                        provider: 'gemini'
-                    }, { status: 429 });
+                if (!process.env.GOOGLE_API_KEY) {
+                    await refundSparks(user.id, sparkCost, generationId, 'API key not configured');
+                    return NextResponse.json(
+                        { error: 'GOOGLE_API_KEY not configured', code: 'CONFIG_ERROR' },
+                        { status: 500 }
+                    );
                 }
 
-                // Re-throw outros erros
-                throw geminiError;
+                imageData = await generateWithGemini(prompt);
+            } else {
+                provider = 'pollinations';
+                imageData = await generateWithPollinations(prompt);
             }
 
-        } else {
-            // ============ SIMPLE MODE: POLLINATIONS ============
-            provider = 'pollinations';
-
-            const imageData = await generateWithPollinations(prompt);
             const duration = Date.now() - startTime;
 
-            // console.log(`[ImageGen] SUCCESS - Pollinations - ${duration}ms`);
-            // console.log(`==========================================\n`);
-
-            return NextResponse.json({
+            const response: GenerateImageResponse = {
                 image: imageData,
-                provider: 'pollinations'
+                provider,
+                generationId,
+                sparksUsed: sparkCost,
+                sparksRemaining: generationResult.sparksRemaining,
+            };
+
+            return NextResponse.json(response, {
+                headers: {
+                    'X-RateLimit-Limit': String(rateLimit.limit),
+                    'X-RateLimit-Remaining': String(rateLimit.remaining - 1),
+                },
             });
+
+        } catch (genError: any) {
+            // Refund sparks if generation failed
+            await refundSparks(user.id, sparkCost, generationId, genError.message || 'Image generation failed');
+            
+            const isQuotaError =
+                genError.message?.toLowerCase().includes('quota') ||
+                genError.message?.toLowerCase().includes('rate limit') ||
+                genError.message?.includes('429') ||
+                (genError as any).status === 429;
+
+            if (isQuotaError) {
+                return NextResponse.json({
+                    error: 'Limite de uso atingido. Tente novamente em alguns minutos.',
+                    code: 'QUOTA_EXCEEDED',
+                    provider: provider,
+                    sparksRefunded: sparkCost,
+                }, { status: 429 });
+            }
+
+            throw genError;
         }
 
     } catch (error: any) {
         const duration = Date.now() - startTime;
 
-        // console.error(`[ImageGen] ERROR - ${provider} - ${duration}ms`);
-        // console.error(`[ImageGen] Error message: ${error.message}`);
-        // console.error(`==========================================\n`);
-
-        // if (error.response) {
-        //     console.error("[ImageGen] Response details:", JSON.stringify(error.response, null, 2));
-        // }
-
         return NextResponse.json({
             error: error.message || 'Erro desconhecido ao gerar imagem',
             details: error.toString(),
-            provider: provider
+            provider: provider,
+            duration: `${duration}ms`,
         }, { status: 500 });
     }
 }

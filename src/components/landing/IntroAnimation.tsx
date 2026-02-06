@@ -7,12 +7,30 @@ interface IntroAnimationProps {
   onComplete: () => void;
 }
 
+// Generate sparkle positions only once on client
+function generateSparkles(count: number) {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i,
+    top: 15 + Math.random() * 70,
+    left: 10 + Math.random() * 80,
+    color: i % 2 === 0 ? '#00d4ff' : '#ff6b35',
+    delay: i * 0.3,
+    duration: 2 + Math.random() * 2,
+  }));
+}
+
 export function IntroAnimation({ onComplete }: IntroAnimationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const logoContainerRef = useRef<HTMLDivElement>(null);
   const [videoEnded, setVideoEnded] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [sparkles, setSparkles] = useState<ReturnType<typeof generateSparkles>>([]);
+
+  // Generate sparkles only on client to avoid hydration mismatch
+  useEffect(() => {
+    setSparkles(generateSparkles(12));
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -46,17 +64,40 @@ export function IntroAnimation({ onComplete }: IntroAnimationProps) {
     if (!videoEnded) return;
 
     const ctx = gsap.context(() => {
-      // Animate logo to header position
+      // Calculate position to match navbar logo
+      // Navbar logo is at: max-w-7xl container with px-4/6/8 padding
+      // Logo size: w-10 h-10 (40px)
+      // Vertical padding: py-3 (12px) or py-5 (20px)
+      
+      const isMobile = window.innerWidth < 768;
+      const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+      
+      // Horizontal padding based on screen size
+      const paddingX = isMobile ? 16 : isTablet ? 24 : 32;
+      // Vertical padding (navbar has py-3 when scrolled, py-5 initially)
+      const paddingY = 20; // py-5 = 20px
+      
+      // Calculate position from center
+      // Container is centered with max-w-7xl (1280px)
+      const containerWidth = Math.min(window.innerWidth, 1280);
+      const containerLeft = (window.innerWidth - containerWidth) / 2;
+      
+      // Logo position from center
+      const logoX = containerLeft + paddingX + 20 - (window.innerWidth / 2); // +20 for half of logo width
+      const logoY = paddingY + 20 - (window.innerHeight / 2); // +20 for half of logo height
+      
+      // Animate logo to header position with fade-out
       gsap.to(logoContainerRef.current, {
-        scale: 0.12,
-        x: 'calc(-50vw + 80px)',
-        y: 'calc(-50vh + 40px)',
+        scale: 0.125, // 320px * 0.125 = 40px (matches w-10)
+        x: `${logoX}px`,
+        y: `${logoY}px`,
+        opacity: 0, // Fade out as it moves to navbar
         duration: 1.2,
         ease: 'power3.inOut',
         onComplete: () => {
           gsap.to(containerRef.current, {
             opacity: 0,
-            duration: 0.5,
+            duration: 0.3,
             onComplete: onComplete,
           });
         },
@@ -74,7 +115,8 @@ export function IntroAnimation({ onComplete }: IntroAnimationProps) {
         background: 'radial-gradient(ellipse at center, #0a1628 0%, #050a10 50%, #020408 100%)',
       }}
     >
-      {/* Ambient glow effects matching the video */}
+      {/* Ambient glow effects matching the video - TEMPORARIAMENTE COMENTADO PARA TESTE */}
+      {/*
       <div className="absolute inset-0 pointer-events-none">
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-30"
@@ -89,17 +131,19 @@ export function IntroAnimation({ onComplete }: IntroAnimationProps) {
           }}
         />
       </div>
+      */}
 
       {/* Logo Container with Video or Image Fallback */}
       <div
         ref={logoContainerRef}
         className="relative z-10 flex flex-col items-center justify-center"
       >
+        {/*
         <div className="w-80 h-80 md:w-96 md:h-96 relative">
           {!videoError ? (
             <video
               ref={videoRef}
-              src="/logo-animation.webm"
+              src="/logo_web.webm"
               className="w-full h-full object-contain"
               muted
               playsInline
@@ -115,7 +159,28 @@ export function IntroAnimation({ onComplete }: IntroAnimationProps) {
             />
           )}
         </div>
+        */}
 
+        {!videoError ? (
+            <video
+              ref={videoRef}
+              src="/logo_web.webm"
+              className="w-80 h-80 md:w-96 md:h-96 object-contain"
+              muted
+              playsInline
+              // TEMPORARIAMENTE REMOVIDO DROP-SHADOW PARA TESTE
+              // style={{ filter: 'drop-shadow(0 0 60px rgba(0, 180, 255, 0.4))' }}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/logo.png"
+              alt="PostSpark"
+              className="w-80 h-80 md:w-96 md:h-96 object-contain"
+              // TEMPORARIAMENTE REMOVIDO DROP-SHADOW PARA TESTE
+              // style={{ filter: 'drop-shadow(0 0 60px rgba(0, 180, 255, 0.4))' }}
+            />
+          )}
         {/* Brand name appears below logo */}
         <div className="mt-8 text-center opacity-0 animate-fade-in">
           <h1
@@ -135,19 +200,19 @@ export function IntroAnimation({ onComplete }: IntroAnimationProps) {
         </div>
       </div>
 
-      {/* Sparkle particles around */}
+      {/* Sparkle particles around - rendered only on client */}
       <div className="absolute inset-0 pointer-events-none">
-        {[...Array(12)].map((_, i) => (
+        {sparkles.map((sparkle) => (
           <div
-            key={i}
+            key={sparkle.id}
             className="absolute w-1 h-1 rounded-full sparkle"
             style={{
-              top: `${15 + Math.random() * 70}%`,
-              left: `${10 + Math.random() * 80}%`,
-              background: i % 2 === 0 ? '#00d4ff' : '#ff6b35',
-              boxShadow: `0 0 10px ${i % 2 === 0 ? '#00d4ff' : '#ff6b35'}`,
-              animationDelay: `${i * 0.3}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
+              top: `${sparkle.top}%`,
+              left: `${sparkle.left}%`,
+              background: sparkle.color,
+              boxShadow: `0 0 10px ${sparkle.color}`,
+              animationDelay: `${sparkle.delay}s`,
+              animationDuration: `${sparkle.duration}s`,
             }}
           />
         ))}

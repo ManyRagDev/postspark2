@@ -26,8 +26,8 @@ export function CTASection() {
           ease: 'power3.out',
           scrollTrigger: {
             trigger: sectionRef.current,
-            start: 'top 70%',
-            toggleActions: 'play none none reverse',
+            start: 'top 80%',
+            toggleActions: 'play none none none',
           },
         }
       );
@@ -37,7 +37,7 @@ export function CTASection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative py-24 lg:py-32 overflow-hidden">
+    <section ref={sectionRef} className="relative py-16 lg:py-24 overflow-hidden bg-gradient-to-b from-[#0a1628] to-[#050a10]">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-orange-500/20 rounded-full blur-[150px]" />
@@ -78,8 +78,8 @@ export function CTASection() {
             </h2>
 
             <p className="text-lg lg:text-xl text-gray-300 max-w-2xl mx-auto mb-10">
-              Junte-se a mais de 50.000 criadores e empresas que já transformaram
-              sua presença nas redes sociais. Comece gratuitamente hoje.
+              Comece gratuitamente hoje e transforme suas ideias em posts
+              engajadores em segundos.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -98,8 +98,11 @@ export function CTASection() {
                 size="lg"
                 variant="outline"
                 className="border-white/30 text-white hover:bg-white/10 px-8 py-6 text-lg"
+                asChild
               >
-                Agendar Demonstração
+                <Link href="/dashboard">
+                  Ver Exemplos
+                </Link>
               </Button>
             </div>
 
@@ -116,12 +119,6 @@ export function CTASection() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span>Cancelamento anytime</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Suporte 24/7</span>
               </div>
             </div>
           </div>

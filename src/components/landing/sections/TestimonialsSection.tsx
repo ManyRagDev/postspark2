@@ -192,7 +192,6 @@ export function TestimonialsSection() {
         {/* Stats */}
         <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
-            { value: '50K+', label: 'Usuários Ativos' },
             { value: '2M+', label: 'Posts Criados' },
             { value: '4.9', label: 'Avaliação Média' },
             { value: '300%', label: 'Aumento Médio de Engajamento' },
