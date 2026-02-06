@@ -6,7 +6,7 @@
 'use client';
 
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { getGenerationCost, type GenerationType } from '@/lib/sparks/config';
 
 interface RegenerationLimitModalProps {
@@ -50,7 +50,7 @@ export function RegenerationLimitModal({
             <div>
               <h4 className="font-medium text-white text-sm">Como funciona?</h4>
               <p className="text-gray-400 text-sm mt-1">
-                Cada post permite apenas 1 regeneração gratuita (ou paga). 
+                Cada post permite apenas 1 regeneração gratuita (ou paga).
                 Após isso, você precisa criar um novo post.
               </p>
             </div>
@@ -90,7 +90,7 @@ export function RegenerationLimitModal({
 
         {/* Tip */}
         <p className="text-xs text-gray-500 text-center">
-          💡 Dica: Use a regeneração apenas quando necessário. 
+          💡 Dica: Use a regeneração apenas quando necessário.
           Cada post novo consome sparks do seu saldo.
         </p>
       </div>

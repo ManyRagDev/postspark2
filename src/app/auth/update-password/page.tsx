@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -127,7 +127,7 @@ export default function UpdatePasswordPage() {
               style={{ filter: 'drop-shadow(0 0 12px rgba(0, 180, 255, 0.5))' }}
             />
           </div>
-          <h1 
+          <h1
             className="text-3xl font-bold font-mono"
             style={{
               background: 'linear-gradient(135deg, #00d4ff 0%, #ff6b35 50%, #ff9500 100%)',

@@ -2,7 +2,7 @@
 
 import { useUser } from '@/contexts/UserContext';
 import { SparkBalance } from '@/components/sparks';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { User, LogOut, Sparkles } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';

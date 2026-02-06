@@ -8,7 +8,7 @@
 import { useUser } from '@/contexts/UserContext';
 import { PLAN_CONFIGS, type UserPlan } from '@/lib/sparks/plans';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Zap, ArrowUpRight, AlertTriangle, Crown } from 'lucide-react';
 
 interface SparkBalanceCardProps {

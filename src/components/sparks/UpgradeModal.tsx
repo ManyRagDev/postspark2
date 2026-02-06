@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { useUser, type UserPlan } from '@/contexts/UserContext';
 import { PLAN_CONFIGS, FLASH_SALE_CONFIG, getUpgradeSuggestion } from '@/lib/sparks/plans';
 import { cn } from '@/lib/utils';

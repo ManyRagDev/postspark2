@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { UpgradeModal } from '@/components/sparks';
 import { getGenerationCost, type GenerationType } from '@/lib/sparks/config';
 import { Sparkles } from 'lucide-react';
@@ -26,7 +26,7 @@ export function SparkProtectedButton({
 }: SparkProtectedButtonProps) {
   const { hasEnoughSparks } = useUser();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  
+
   const cost = getGenerationCost(generationType, false);
   const canAfford = hasEnoughSparks(cost);
 

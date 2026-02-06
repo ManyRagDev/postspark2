@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import Link from 'next/link';
 import { Menu, X, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 
 interface HeaderProps {
   isVisible: boolean;
@@ -53,11 +53,10 @@ export function Header({ isVisible }: HeaderProps) {
   return (
     <header
       ref={headerRef}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
           ? 'py-3'
           : 'bg-transparent py-5'
-      }`}
+        }`}
       style={{
         background: scrolled
           ? 'rgba(5, 10, 16, 0.85)'

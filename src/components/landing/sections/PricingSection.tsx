@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Link from 'next/link';
 import { Check, Sparkles, Zap, Crown, Building2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/switch';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -183,7 +183,7 @@ export function PricingSection() {
             <span className="gradient-text">perfeito para você</span>
           </h2>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-4">
-            Pague apenas pelo que usar. Cada geração consome Sparks. 
+            Pague apenas pelo que usar. Cada geração consome Sparks.
             Quanto mais você usa, mais economiza.
           </p>
           <p className="text-sm text-gray-500 max-w-xl mx-auto">
@@ -219,11 +219,10 @@ export function PricingSection() {
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`pricing-card relative rounded-2xl lg:rounded-3xl overflow-hidden ${
-                plan.popular
+              className={`pricing-card relative rounded-2xl lg:rounded-3xl overflow-hidden ${plan.popular
                   ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border-2 border-cyan-500/50 scale-105 z-10'
                   : 'bg-white/5 border border-white/10'
-              } p-6 lg:p-6`}
+                } p-6 lg:p-6`}
             >
               {/* Popular badge */}
               {plan.popular && (
@@ -285,11 +284,10 @@ export function PricingSection() {
               {plan.ctaLink ? (
                 <Link href={plan.ctaLink} className="block">
                   <Button
-                    className={`w-full ${
-                      plan.popular
+                    className={`w-full ${plan.popular
                         ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white'
                         : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
-                    }`}
+                      }`}
                   >
                     {plan.cta}
                   </Button>
